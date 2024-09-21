@@ -8,20 +8,19 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class Main {
-    // Conjunto de palavras reservadas
     private static final Set<String> RESERVED_WORDS = new HashSet<>(Arrays.asList(
         "int", "double", "float", "real", "break", "case", "char", "const", "continue"
     ));
-    // Padrões para reconhecimento de tokens
+
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9]*$");
     private static final Pattern INTEGER_PATTERN = Pattern.compile("^([0-9]|[1-9][0-9])$");
     private static final Pattern REAL_PATTERN = Pattern.compile("^([0-9]|[1-9][0-9])\\.\\d{2}$");
     private static final Pattern COMMENT_PATTERN = Pattern.compile("^//.*$");
-    // Estruturas de dados
+
     private static final List<Token> tokens = new ArrayList<>();
     private static final Map<String, Integer> symbolTable = new LinkedHashMap<>();
     private static final List<Error> errors = new ArrayList<>();
-    // Contador para IDs de símbolos
+
     private static int symbolIdCounter = 1;
 
     public static void main(String[] args) {
@@ -53,7 +52,7 @@ public class Main {
 
     private static void processLine(String line, int lineNumber) {
         if (COMMENT_PATTERN.matcher(line).matches()) {
-            tokens.add(new Token(lineNumber, "COMENTARIO", line));
+            tokens.add(new Token(lineNumber, TokenType.COMENTARIO, line));
             return;
         }
 
@@ -70,17 +69,18 @@ public class Main {
 
         //Ao chegar neste ponto, é confirmado que a linha tem exatamente 1 palavra
         String word = words[0];
-        String tokenType = identifyToken(word);
-
-        if (tokenType.equals("ERRO")) {
+        TokenType tokenType;
+        try {
+            tokenType = identifyToken(word);
+        } catch (TokenNotFoundException e) {
             errors.add(new Error(lineNumber, line));
             return;
         }
 
         Token token = new Token(lineNumber, tokenType, word);
 
-        // Adicionar ao token a ID do símbolo, se aplicável
-        if (tokenType.equals("IDENTIFICADOR") || tokenType.equals("NUMERO_INTEIRO") || tokenType.equals("NUMERO_REAL")) {
+        // Adicionar ID do símbolo
+        if (tokenType.equals(TokenType.IDENTIFICADOR) || tokenType.equals(TokenType.NUMERO_INTEIRO) || tokenType.equals(TokenType.NUMERO_REAL)) {
             if (!symbolTable.containsKey(word)) {
                 symbolTable.put(word, symbolIdCounter++);
             }
@@ -90,17 +90,17 @@ public class Main {
         tokens.add(token);
     }
 
-    private static String identifyToken(String word) {
+    private static TokenType identifyToken(String word) {
         if (RESERVED_WORDS.contains(word)) {
-            return word.toUpperCase();
+            return TokenType.valueOf(word.toUpperCase());
         } else if (IDENTIFIER_PATTERN.matcher(word).matches()) {
-            return "IDENTIFICADOR";
+            return TokenType.IDENTIFICADOR;
         } else if (INTEGER_PATTERN.matcher(word).matches()) {
-            return "NUMERO_INTEIRO";
+            return TokenType.NUMERO_INTEIRO;
         } else if (REAL_PATTERN.matcher(word).matches()) {
-            return "NUMERO_REAL";
+            return TokenType.NUMERO_INTEIRO;
         } else {
-            return "ERRO";
+            throw new TokenNotFoundException();
         }
     }
 
@@ -128,25 +128,23 @@ public class Main {
         if (!errors.isEmpty()) {
             System.out.println("\nErros nas linhas:");
             for (Error error : errors) {
-                System.out.println(error.getLineNumber() + " (" + error.getLineContent() + ")");
+                System.out.println(error.lineNumber() + " (" + error.lineContent() + ")");
             }
         }
     }
 
-    // Enum para tipos de tokens
     enum TokenType {
         IDENTIFICADOR, NUMERO_INTEIRO, NUMERO_REAL, COMENTARIO,
         INT, DOUBLE, FLOAT, REAL, BREAK, CASE, CHAR, CONST, CONTINUE
     }
 
-    // Classe Token
     static class Token {
         private final int lineNumber;
-        private final String type;
+        private final TokenType type;
         private final String value;
         private int symbolId = -1; // Padrão -1 se não aplicável
 
-        public Token(int lineNumber, String type, String value) {
+        public Token(int lineNumber, TokenType type, String value) {
             this.lineNumber = lineNumber;
             this.type = type;
             this.value = value;
@@ -156,7 +154,7 @@ public class Main {
             return lineNumber;
         }
 
-        public String getType() {
+        public TokenType getType() {
             return type;
         }
 
@@ -169,22 +167,9 @@ public class Main {
         }
     }
 
-    // Classe Error
-    static class Error {
-        private final int lineNumber;
-        private final String lineContent;
+    record Error(int lineNumber, String lineContent) {
+    }
 
-        public Error(int lineNumber, String lineContent) {
-            this.lineNumber = lineNumber;
-            this.lineContent = lineContent;
-        }
-
-        public int getLineNumber() {
-            return lineNumber;
-        }
-
-        public String getLineContent() {
-            return lineContent;
-        }
+    static class TokenNotFoundException extends RuntimeException {
     }
 }
