@@ -1,0 +1,20 @@
+printf("Olá mundo!");
+printf("valor = %d", nro);
+printf("O cálculo correto da expressão %i + %i = %i", nro, nro, nro + nro);
+printf("Número incorreto de variáveis %i + %i = %i", nro, nro);
+printf("O produto = %.2f", produto(nro,nro));
+printf("Falta ponto e vírgula")
+printf("Válido? %q", var);
+printf("Válido? %d", var);
+printf("Válido? %s", var);
+printf("Válido? %f", var);
+printf("Válido? %i", var);
+printf("Identificador inválido %s", 1);
+printf("Identificador inválido %i", 1.5);
+printf("Identificador inválido? %f", 1);
+print("Comando inválido");
+prinf(Falta String);
+printf(""");
+printf(""""));
+printf("\"Deveria ser válido?");
+printf("", );
